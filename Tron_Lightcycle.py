@@ -9,12 +9,12 @@ screen.tracer(0)        # disable auto-animation
 
 def make_player(color, x, y, heading):
     t = turtle.Turtle()
-    t.color(color);
-    t.pensize(3);
+    t.color(color)
+    t.pensize(3)
     t.speed(0)
-    t.penup();
+    t.penup()
     t.goto(x, y)
-    t.setheading(heading); # face right
+    t.setheading(heading) # face right
     t.pendown()            # start drawing trail
     return t
 
@@ -35,10 +35,23 @@ screen.onkeypress(lambda: turn(b, 90),  "Up")
 screen.onkeypress(lambda: turn(b, 270), "Down")
 screen.onkeypress(lambda: turn(b, 180), "Left")
 screen.onkeypress(lambda: turn(b, 0),   "Right")
+
 screen.listen()
+
+trail_a, trail_b = [], []
+frame = 0
+SAMPLE = 4   # record a point every 4 frames
 
 while True:
     a.forward(5)        # move 5 px every frame
     b.forward(5)        # move 5 px every frame
+
+    frame += 1
+    if frame % SAMPLE == 0:
+        trail_a.append((a.xcor(), a.ycor()))
+        trail_b.append((b.xcor(), b.ycor()))
+        # Debug: see trails growing
+        print(len(trail_a), len(trail_b))
+
     screen.update()     # manually refresh
     time.sleep(0.013)   # ~75 fps
