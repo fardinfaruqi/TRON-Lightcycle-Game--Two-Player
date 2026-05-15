@@ -1,8 +1,16 @@
 import turtle
 import time
 
+### --- Constants --- ###
+WIDTH, HEIGHT   = 800, 600
+STEP            = 5           # pixels per frame
+FRAME_DELAY     = 0.013       # seconds per frame (~75 fps)
+TRAIL_THICKNESS = 3
+TRAIL_SAMPLE    = 4           # record a position every N frames
+
+### --- Screen Setup --- ###
 screen = turtle.Screen()
-screen.setup(800, 600)
+screen.setup(WIDTH, HEIGHT)
 screen.bgcolor("black")
 screen.title("TRON Lightcycle")
 screen.tracer(0)        # disable auto-animation   
@@ -25,16 +33,13 @@ def show_text(msg, y=0, size=28):
 def make_player(color, x, y, heading):
     t = turtle.Turtle()
     t.color(color)
-    t.pensize(3)
+    t.pensize(TRAIL_THICKNESS)
     t.speed(0)
     t.penup()
     t.goto(x, y)
-    t.setheading(heading) # face right
-    t.pendown()            # start drawing trail
+    t.setheading(heading)
+    t.pendown()
     return t
-
-# a = make_player("cyan",   -160, 0,   0) # Player A starts on the Left, facing right
-# b = make_player("yellow",  160, 0, 180) # Player B starts on the Right, facing Left
 
 a = b = None
 
@@ -71,7 +76,6 @@ screen.listen()
 
 trail_a, trail_b = [], []
 frame = 0
-SAMPLE = 4   # record a point every 4 frames
 running = False
 
 show_text("TRON", y=30, size=42)
@@ -101,10 +105,10 @@ while True:
     # b.forward(5)        # move 5 px every frame
 
     if running:
-        a.forward(5)
-        b.forward(5)
+        a.forward(STEP)
+        b.forward(STEP)
         frame += 1
-        if frame % SAMPLE == 0:
+        if frame % TRAIL_SAMPLE == 0:
             trail_a.append((a.xcor(), a.ycor()))
             trail_b.append((b.xcor(), b.ycor()))
 
@@ -125,6 +129,6 @@ while True:
             show_text("Press ENTER to play again", y=-40, size=13)
 
     screen.update()     # manually refresh
-    time.sleep(0.013)   # ~75 fps
+    time.sleep(FRAME_DELAY)
 
     
