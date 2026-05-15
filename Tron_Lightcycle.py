@@ -95,12 +95,13 @@ player_a = make_player("cyan",   -160,  0, 0)    # faces right
 player_b = make_player("yellow",  160,  0, 180)  # faces left
 
 def reset_players():
-    for t, x, y, h, trails in (
-        (player_a, -160,  0,   0, state.trail_a),
-        (player_b,  160,  0, 180, state.trail_b),
+    for t, color, x, y, h, trails in (
+        (player_a, "cyan", -160,  0,   0, state.trail_a),
+        (player_b, "yellow", 160,  0, 180, state.trail_b),
     ):
         t.clear()          # erase drawn trail
         trails.clear()
+        t.color(color)
         t.penup()
         t.goto(x, y)
         t.setheading(h)
