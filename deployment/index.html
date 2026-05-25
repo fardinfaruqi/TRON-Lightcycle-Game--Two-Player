@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRON Lightcycle — Two Player Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cyan: #00f5ff;
+      --orange: #ff6b00;
+      --blue-dark: #020b18;
+      --blue-mid: #041a2e;
+      --blue-panel: #071e33;
+      --glow-cyan: 0 0 8px #00f5ff, 0 0 24px #00f5ffaa, 0 0 60px #00f5ff44;
+      --glow-orange: 0 0 8px #ff6b00, 0 0 24px #ff6b00aa, 0 0 60px #ff6b0044;
+      --glow-text-cyan: 0 0 10px #00f5ff, 0 0 30px #00f5ffaa;
+      --glow-text-orange: 0 0 10px #ff6b00, 0 0 30px #ff6b00aa;
+      --grid-color: rgba(0, 245, 255, 0.04);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--blue-dark);
+      color: #c8e8f0;
+      font-family: 'Share Tech Mono', monospace;
+      overflow-x: hidden;
+      cursor: crosshair;
+    }
+
+    /* GRID BACKGROUND */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* SCANLINES */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    section, header, footer { position: relative; z-index: 2; }
+
+    /* ─── HEADER / HERO ─── */
+    header {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 24px 40px;
+      overflow: hidden;
+    }
+
+    .hero-bg-lines {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .hero-bg-lines span {
+      display: block;
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      opacity: 0;
+      animation: scanline-move 4s linear infinite;
+    }
+    .hero-bg-lines span:nth-child(1) { top: 20%; width: 60%; left: 20%; animation-delay: 0s; }
+    .hero-bg-lines span:nth-child(2) { top: 45%; width: 40%; left: 30%; animation-delay: 1.3s; opacity: 0.5;}
+    .hero-bg-lines span:nth-child(3) { top: 70%; width: 70%; left: 15%; animation-delay: 2.6s; }
+    .hero-bg-lines span:nth-child(4) { top: 85%; width: 30%; left: 60%; animation-delay: 0.7s; opacity: 0.3;}
+
+    @keyframes scanline-move {
+      0%   { opacity: 0; transform: scaleX(0) translateX(-50%); }
+      20%  { opacity: 1; }
+      80%  { opacity: 1; }
+      100% { opacity: 0; transform: scaleX(1) translateX(0); }
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      border: 1px solid var(--cyan);
+      padding: 5px 16px;
+      margin-bottom: 32px;
+      box-shadow: var(--glow-cyan);
+      animation: pulse-border 2s ease-in-out infinite;
+    }
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: var(--glow-cyan); }
+      50% { box-shadow: 0 0 4px #00f5ff, 0 0 12px #00f5ff88; }
+    }
+
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: clamp(2.8rem, 8vw, 7rem);
+      line-height: 1;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: var(--glow-text-cyan);
+      animation: flicker 6s step-end infinite;
+      margin-bottom: 12px;
+    }
+    .title-accent { color: var(--cyan); }
+
+    @keyframes flicker {
+      0%, 95%, 97%, 100% { opacity: 1; }
+      96% { opacity: 0.5; }
+    }
+
+    .subtitle {
+      font-size: clamp(0.75rem, 2vw, 1rem);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--orange);
+      text-shadow: var(--glow-text-orange);
+      margin-bottom: 48px;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 72px;
+    }
+
+    .btn {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 14px 32px;
+      border: 2px solid;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+    }
+    .btn:hover::before { transform: translateX(0); }
+    .btn span { position: relative; z-index: 1; }
+
+    .btn-cyan {
+      color: var(--cyan);
+      border-color: var(--cyan);
+      box-shadow: var(--glow-cyan);
+    }
+    .btn-cyan::before { background: var(--cyan); }
+    .btn-cyan:hover { color: var(--blue-dark); box-shadow: 0 0 30px #00f5ff; }
+
+    .btn-orange {
+      color: var(--orange);
+      border-color: var(--orange);
+      box-shadow: var(--glow-orange);
+    }
+    .btn-orange::before { background: var(--orange); }
+    .btn-orange:hover { color: var(--blue-dark); box-shadow: 0 0 30px #ff6b00; }
+
+    /* SCROLL INDICATOR */
+    .scroll-hint {
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      color: rgba(0,245,255,0.4);
+      text-transform: uppercase;
+      animation: bounce 2s ease-in-out infinite;
+    }
+    .scroll-hint::after { content: ' ▼'; }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    /* ─── SECTION COMMON ─── */
+    .section {
+      padding: 100px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 12px;
+      opacity: 0.7;
+    }
+
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.5rem, 4vw, 2.6rem);
+      font-weight: 700;
+      color: #fff;
+      text-shadow: var(--glow-text-cyan);
+      margin-bottom: 48px;
+      line-height: 1.2;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      margin: 0 auto 80px;
+      max-width: 800px;
+      box-shadow: 0 0 10px var(--cyan);
+    }
+
+    /* ─── LIVE DEMO ─── */
+    .demo-section {
+      background: var(--blue-mid);
+      border-top: 1px solid rgba(0,245,255,0.15);
+      border-bottom: 1px solid rgba(0,245,255,0.15);
+      padding: 80px 0;
+    }
+    .demo-inner {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 0 24px;
+      text-align: center;
+    }
+    .demo-frame-wrap {
+      position: relative;
+      margin-top: 40px;
+    }
+    .demo-frame-wrap::before,
+    .demo-frame-wrap::after {
+      content: '';
+      display: block;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--cyan), var(--orange), var(--cyan), transparent);
+      box-shadow: 0 0 12px var(--cyan);
+    }
+    .frame-corner {
+      position: absolute;
+      width: 20px; height: 20px;
+      border-color: var(--cyan);
+      border-style: solid;
+      z-index: 5;
+    }
+    .frame-corner.tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
+    .frame-corner.tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
+    .frame-corner.bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+    .frame-corner.br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+
+    .demo-frame-wrap iframe {
+      display: block;
+      width: 100%;
+      height: 600px;
+      border: none;
+      background: #000;
+    }
+
+    .demo-hint {
+      margin-top: 20px;
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      color: rgba(0,245,255,0.5);
+      text-transform: uppercase;
+    }
+
+    /* ─── FEATURES ─── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--blue-panel);
+      border: 1px solid rgba(0,245,255,0.12);
+      padding: 32px 28px;
+      position: relative;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--cyan), var(--orange));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s;
+    }
+    .feature-card:hover { border-color: rgba(0,245,255,0.4); box-shadow: 0 0 30px rgba(0,245,255,0.08); }
+    .feature-card:hover::before { transform: scaleX(1); }
+
+    .feature-icon {
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .feature-card h3 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .feature-card p {
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: #7fa8b8;
+    }
+
+    /* ─── CONTROLS ─── */
+    .controls-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+    @media (max-width: 640px) { .controls-layout { grid-template-columns: 1fr; } }
+
+    .player-card {
+      border: 1px solid;
+      padding: 36px 28px;
+      position: relative;
+    }
+    .player-card.p1 { border-color: rgba(0,245,255,0.3); box-shadow: inset 0 0 40px rgba(0,245,255,0.03); }
+    .player-card.p2 { border-color: rgba(255,107,0,0.3); box-shadow: inset 0 0 40px rgba(255,107,0,0.03); }
+
+    .player-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .player-card.p1 .player-label { color: var(--cyan); text-shadow: var(--glow-text-cyan); }
+    .player-card.p2 .player-label { color: var(--orange); text-shadow: var(--glow-text-orange); }
+
+    .key-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 52px);
+      grid-template-rows: repeat(2, 52px);
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .key {
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(0,0,0,0.4);
+      cursor: default;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .p1 .key { border-color: rgba(0,245,255,0.4); }
+    .p2 .key { border-color: rgba(255,107,0,0.4); }
+    .key.up { grid-column: 2; grid-row: 1; }
+    .key.left { grid-column: 1; grid-row: 2; }
+    .key.down { grid-column: 2; grid-row: 2; }
+    .key.right { grid-column: 3; grid-row: 2; }
+
+    .control-note {
+      font-size: 0.72rem;
+      color: #5580a0;
+      text-align: center;
+      letter-spacing: 0.08em;
+    }
+
+    /* ─── ARCHITECTURE ─── */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .arch-card {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(0,245,255,0.08);
+      padding: 24px 20px;
+      transition: border-color 0.2s;
+    }
+    .arch-card:hover { border-color: rgba(0,245,255,0.3); }
+    .arch-card h4 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 0.12em;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .arch-card p { font-size: 0.75rem; line-height: 1.6; color: #5580a0; }
+    .arch-file {
+      display: inline-block;
+      font-size: 0.65rem;
+      color: var(--orange);
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    /* ─── INSTALL ─── */
+    .install-block {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(0,245,255,0.15);
+      border-left: 3px solid var(--cyan);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+    .install-block .step-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--cyan);
+      opacity: 0.6;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .install-block p {
+      font-size: 0.85rem;
+      margin-bottom: 14px;
+      color: #7fa8b8;
+    }
+    .code-snippet {
+      background: var(--blue-dark);
+      border: 1px solid rgba(0,245,255,0.1);
+      padding: 14px 18px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--cyan);
+      letter-spacing: 0.05em;
+      position: relative;
+      overflow-x: auto;
+    }
+    .code-snippet .comment { color: #3a6070; }
+    .code-snippet .cmd { color: #fff; }
+
+    /* ─── CONFIG TABLE ─── */
+    .config-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    .config-table th {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(0,245,255,0.2);
+    }
+    .config-table td {
+      padding: 11px 16px;
+      border-bottom: 1px solid rgba(0,245,255,0.06);
+      color: #7fa8b8;
+      vertical-align: top;
+    }
+    .config-table tr:hover td { background: rgba(0,245,255,0.03); }
+    .config-table td:first-child { color: var(--orange); font-family: 'Share Tech Mono', monospace; }
+    .config-table td:nth-child(2) { color: #c8e8f0; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid rgba(0,245,255,0.1);
+      padding: 60px 24px;
+      text-align: center;
+    }
+    .footer-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--cyan);
+      text-shadow: var(--glow-text-cyan);
+      letter-spacing: 0.15em;
+      margin-bottom: 12px;
+    }
+    footer p {
+      font-size: 0.72rem;
+      color: #3a6070;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 36px;
+      background: rgba(2,11,24,0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0,245,255,0.08);
+    }
+    .nav-logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: var(--cyan);
+      text-shadow: var(--glow-text-cyan);
+      letter-spacing: 0.15em;
+      text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 28px; list-style: none; }
+    .nav-links a {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(200,232,240,0.6);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--cyan); }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      nav { padding: 16px 20px; }
+    }
+
+    /* ─── RULES PILLS ─── */
+    .rules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .rule-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 18px 20px;
+      border: 1px solid rgba(0,245,255,0.08);
+      background: rgba(0,0,0,0.2);
+    }
+    .rule-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: rgba(0,245,255,0.2);
+      min-width: 36px;
+      line-height: 1;
+    }
+    .rule-item p { font-size: 0.83rem; line-height: 1.6; color: #7fa8b8; }
+    .rule-item strong { color: #c8e8f0; }
+
+    /* FADE-IN on scroll */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">TRON // LIGHTCYCLE</a>
+    <ul class="nav-links">
+      <li><a href="#demo">Play</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#controls">Controls</a></li>
+      <li><a href="#install">Install</a></li>
+      <li><a href="#architecture">Code</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <header>
+    <div class="hero-bg-lines">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="badge">// Python Turtle &nbsp;·&nbsp; Two Player &nbsp;·&nbsp; Open Source</div>
+    <h1>TRON <span class="title-accent">LIGHT</span>CYCLE</h1>
+    <p class="subtitle">Enter the Grid. Leave only light. Survive.</p>
+    <div class="hero-cta">
+      <a href="#demo" class="btn btn-cyan"><span>▶ Play Now</span></a>
+      <a href="https://github.com/fardinfaruqi/TRON-Lightcycle-Game--Two-Player" target="_blank" class="btn btn-orange"><span>⬡ GitHub</span></a>
+    </div>
+    <span class="scroll-hint">Scroll to explore</span>
+  </header>
+
+  <!-- LIVE DEMO -->
+  <section class="demo-section" id="demo">
+    <div class="demo-inner">
+      <p class="section-label">// Live Demo</p>
+      <h2 class="section-title">Play Right Here</h2>
+      <div class="demo-frame-wrap">
+        <div class="frame-corner tl"></div>
+        <div class="frame-corner tr"></div>
+        <div class="frame-corner bl"></div>
+        <div class="frame-corner br"></div>
+        <iframe
+          src="https://trinket.io/embed/python/2857ceb24f30?outputOnly=true&start=result"
+          allowfullscreen
+          title="TRON Lightcycle Game"
+        ></iframe>
+      </div>
+      <p class="demo-hint">// Press ENTER or SPACE to start · WASD vs Arrow Keys</p>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="section fade-up">
+      <p class="section-label">// Capabilities</p>
+      <h2 class="section-title">What's on the Grid</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">⚡</span>
+          <h3>Two-Player Local</h3>
+          <p>Go head-to-head on the same keyboard. Player A uses WASD, Player B claims the arrow keys.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">💥</span>
+          <h3>Real-Time Collision</h3>
+          <p>Wall hits, trail collisions, self-intersections, and simultaneous crashes — all detected at ~75 FPS.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🔄</span>
+          <h3>Instant Replay</h3>
+          <p>Hit ENTER or SPACE after any round ends and the arena resets. No restarts, no friction.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🎨</span>
+          <h3>Visual HUD</h3>
+          <p>Color-coded cycles, live heads-up display, splash screen intro, and a clean end-game results overlay.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🏗️</span>
+          <h3>Clean OOP Architecture</h3>
+          <p>Eight focused classes — each with a single responsibility. Built to extend: add AI, power-ups, or sound.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">⚙️</span>
+          <h3>Fully Configurable</h3>
+          <p>Tune speed, arena size, trail thickness, collision radius, and frame delay in one central constants file.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- CONTROLS -->
+  <section id="controls">
+    <div class="section fade-up">
+      <p class="section-label">// Input Mapping</p>
+      <h2 class="section-title">Controls</h2>
+      <div class="controls-layout">
+
+        <div class="player-card p1">
+          <p class="player-label">◈ Player A — Cyan</p>
+          <div class="key-grid">
+            <div class="key up">W</div>
+            <div class="key left">A</div>
+            <div class="key down">S</div>
+            <div class="key right">D</div>
+          </div>
+          <p class="control-note">WASD to steer your lightcycle</p>
+        </div>
+
+        <div class="player-card p2">
+          <p class="player-label">◈ Player B — Orange</p>
+          <div class="key-grid">
+            <div class="key up">↑</div>
+            <div class="key left">←</div>
+            <div class="key down">↓</div>
+            <div class="key right">→</div>
+          </div>
+          <p class="control-note">Arrow Keys to steer your lightcycle</p>
+        </div>
+
+      </div>
+      <br/>
+      <div class="rules-list" style="max-width:680px; margin:40px auto 0;">
+        <p class="section-label" style="margin-bottom:16px;">// Rules of the Grid</p>
+        <div class="rule-item"><span class="rule-num">01</span><p>Your cycle moves <strong>continuously</strong> — you can only steer, never stop.</p></div>
+        <div class="rule-item"><span class="rule-num">02</span><p><strong>180° U-turns are blocked.</strong> Plan your moves ahead.</p></div>
+        <div class="rule-item"><span class="rule-num">03</span><p>Touch a <strong>wall, opponent trail, or your own trail</strong> and you lose.</p></div>
+        <div class="rule-item"><span class="rule-num">04</span><p>If both players crash at the same time, it's a <strong>draw</strong>.</p></div>
+        <div class="rule-item"><span class="rule-num">05</span><p>Last cycle surviving <strong>wins the round</strong>. Press ENTER to run it again.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- INSTALL -->
+  <section id="install">
+    <div class="section fade-up">
+      <p class="section-label">// Local Setup</p>
+      <h2 class="section-title">Run it Yourself</h2>
+
+      <div class="install-block">
+        <p class="step-num">Step 01 — Clone the Repository</p>
+        <p>Download the project via Git or grab the ZIP from GitHub.</p>
+        <div class="code-snippet">
+          <span class="comment"># Clone via HTTPS</span><br>
+          <span class="cmd">git clone https://github.com/fardinfaruqi/TRON-Lightcycle-Game--Two-Player</span><br>
+          <span class="cmd">cd "TRON-Lightcycle-Game--Two-Player"</span>
+        </div>
+      </div>
+
+      <div class="install-block">
+        <p class="step-num">Step 02 — Requirements</p>
+        <p>No external packages needed. The <code>turtle</code> module ships with Python 3.7+.</p>
+        <div class="code-snippet">
+          <span class="comment"># Verify your Python version</span><br>
+          <span class="cmd">python --version</span><br>
+          <span class="comment"># Should output Python 3.7 or higher</span>
+        </div>
+      </div>
+
+      <div class="install-block">
+        <p class="step-num">Step 03 — Launch</p>
+        <p>Run the main entry point from your terminal.</p>
+        <div class="code-snippet">
+          <span class="cmd">python Tron_Lightcycle.py</span><br>
+          <span class="comment"># Or: python3 Tron_Lightcycle.py</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONFIG -->
+  <section>
+    <div class="section fade-up" style="padding-top:0;">
+      <p class="section-label">// Tuning</p>
+      <h2 class="section-title">Configuration</h2>
+      <p style="font-size:0.82rem; color:#5580a0; margin-bottom:28px;">All settings live in <span style="color:var(--orange)">classes/constants.py</span> — edit and replay immediately.</p>
+      <table class="config-table">
+        <thead>
+          <tr>
+            <th>Constant</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>WIDTH, HEIGHT</td><td>800 × 600</td><td>Arena dimensions in pixels</td></tr>
+          <tr><td>STEP</td><td>5</td><td>Movement speed (pixels per frame). Raise for faster cycles.</td></tr>
+          <tr><td>FRAME_DELAY</td><td>0.013</td><td>Frame timing — lower values push toward higher FPS</td></tr>
+          <tr><td>TRAIL_THICKNESS</td><td>3</td><td>Width of the light trail in pixels</td></tr>
+          <tr><td>TRAIL_SAMPLE</td><td>4</td><td>Record a trail point every N frames (performance tuning)</td></tr>
+          <tr><td>COLLISION_RADIUS</td><td>6</td><td>Detection radius in pixels around each cycle</td></tr>
+          <tr><td>GRACE_FRAMES</td><td>30</td><td>Frames of immunity before self-collision is checked</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <div class="section fade-up">
+      <p class="section-label">// Code Structure</p>
+      <h2 class="section-title">Architecture</h2>
+      <p style="font-size:0.82rem; color:#5580a0; margin-bottom:36px; max-width:600px;">Eight focused classes, each with a single clear responsibility. Extend any one of them without touching the others.</p>
+      <div class="arch-grid">
+        <div class="arch-card">
+          <span class="arch-file">game.py</span>
+          <h4>Game</h4>
+          <p>Main orchestrator. Runs the game loop — init, update, collision check, render.</p>
+        </div>
+        <div class="arch-card">
+          <span class="arch-file">player.py</span>
+          <h4>Player</h4>
+          <p>Manages position, heading, color, trail recording, and direction queuing.</p>
+        </div>
+        <div class="arch-card">
+          <span class="arch-file">arena.py</span>
+          <h4>Arena</h4>
+          <p>Defines game boundaries, draws the border, validates positions within bounds.</p>
+        </div>
+        <div class="arch-card">
+          <span class="arch-file">collision_detector.py</span>
+          <h4>CollisionDetector</h4>
+          <p>Detects wall hits, opponent trail hits, and self-collisions with a grace period.</p>
+        </div>
+        <div class="arch-card">
+          <span class="arch-file">input_handler.py</span>
+          <h4>InputHandler</h4>
+          <p>Binds keyboard inputs to player actions. Keeps input logic separate from game logic.</p>
+        </div>
+        <div class="arch-card">
+          <span class="arch-file">ui_renderer.py</span>
+          <h4>UIRenderer</h4>
+          <p>Splash screen, HUD, end-game results. All text and graphics in one place.</p>
+        </div>
+        <div class="arch-card">
+          <span class="arch-file">game_state.py</span>
+          <h4>GameState</h4>
+          <p>Tracks game status (running / game_over / winner) and the frame counter.</p>
+        </div>
+        <div class="arch-card">
+          <span class="arch-file">constants.py</span>
+          <h4>Constants</h4>
+          <p>Central config for arena size, speed, collision radius, FPS and more.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p class="footer-title">TRON // LIGHTCYCLE</p>
+    <p>Open Source &nbsp;·&nbsp; Python 3.7+ &nbsp;·&nbsp; Built with turtle</p>
+    <br>
+    <p style="margin-top:8px; color: rgba(0,245,255,0.2);">May the best player win 🏆</p>
+  </footer>
+
+  <script>
+    // Fade-up on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+    // Keyboard key highlight on actual keypress
+    const keyMap = {
+      'w': '.p1 .key.up', 'a': '.p1 .key.left', 's': '.p1 .key.down', 'd': '.p1 .key.right',
+      'arrowup': '.p2 .key.up', 'arrowleft': '.p2 .key.left',
+      'arrowdown': '.p2 .key.down', 'arrowright': '.p2 .key.right'
+    };
+    document.addEventListener('keydown', e => {
+      const sel = keyMap[e.key.toLowerCase()];
+      if (sel) {
+        const el = document.querySelector(sel);
+        if (el) { el.style.background = 'rgba(0,245,255,0.25)'; el.style.boxShadow = '0 0 12px #00f5ff'; }
+      }
+    });
+    document.addEventListener('keyup', e => {
+      const sel = keyMap[e.key.toLowerCase()];
+      if (sel) {
+        const el = document.querySelector(sel);
+        if (el) { el.style.background = 'rgba(0,0,0,0.4)'; el.style.boxShadow = ''; }
+      }
+    });
+  </script>
+</body>
+</html>
