@@ -147,7 +147,6 @@ The project follows **Object-Oriented Design** principles with clear separation 
     ![alt text](screenshots/image-1.png)
 > - End-game screen (winner/draw)
     ![alt text](screenshots/image-2.png)
-> - Close-up of HUD elements
     ![alt text](screenshots/image-3.png)
 
 ## ⚙️ Configuration & Tuning
