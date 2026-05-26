@@ -1,10 +1,10 @@
+# 🔴 Play Now - ╰┈➤[Click_Here](https://tron-lightcycle-game.vercel.app/)ˎˊ˗
+
+🔗 Experience the game instantly at: https://tron-lightcycle-game.vercel.app/
+
 # TRON Lightcycle - Two Player Game
 
 A modern, object-oriented implementation of the classic TRON Lightcycle game in Python. Two players compete in a high-speed arena, leaving trails behind them. Avoid walls and colliding with trails to become the last survivor!
-
-## 🔴 Live Demo
-
-Experience the game instantly at: https://tron-lightcycle-game.vercel.app
 
 ## 🎮 Features
 
